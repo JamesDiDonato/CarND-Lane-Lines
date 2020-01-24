@@ -1,57 +1,64 @@
-# ***My writeup is in the repo titled "CARND-P1-Report-JamesD***
-# **Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# **Lane Line Detection Pipeline** 
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
+### Completed for Udacity Self Driving Car Engineer on 2017/01/03
 
-Overview
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+**Finding Lane Lines on the Road**
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
+The goals / steps of this project are the following:
+* Make a pipeline that finds lane lines on the road
+* Reflect on your work in a written report
 
 
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
+[//]: # (Image References)
 
-1. Describe the pipeline
+[image1]: ./ReportImages/grayscale.png "Grayscale"
+[image2]: ./ReportImages/canny.png "Canny"
+[image3]: ./ReportImages/hough.png "Hough Transform"
+[image4]: ./ReportImages/Cropped.png "Cropped and Overlay"
 
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
 ---
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+### Reflection
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+### 1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
 
-**Step 2:** Open the code in a Jupyter Notebook
+I conqured the assignment in two steps, first by constructing a pipeline able to detect lane markings on road succesfully and second by combining the markings into solid line segments. 
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+#### Pipeline
+The pipeline is constructed in a similar order to the lessons. First the image is converted to grayscale, blurred using a gaussion filter and then converted to edges with Canny Edge Detection. Parameteres were tuned to extract crisp edges exposing the lane markings.  kernel = 5, low threshold = 75, high threshold = 180.
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+![alt text][image1]
+![alt text][image2]
+ 
+Next, the Hough Transform is applied to the edge detected image. Again these parameters were finely tuned across all sample images to accuarely draw lines along the lane markings: rho = 1, theta = math.pi/180, threshold = 15, min_line_len = 30, max_line_gap = 20.
 
-`> jupyter notebook`
+![alt text][image3]
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+Lastly the Hough Transform image is cropped and overlayed on the original image using the supplied function addWeighted(). The cropping area was tuned using the sample images and initially hardcoded.  However in order for the pipeline to perform on the *optional challenge*, I used some basic ratios to scale the area based on larger image dimensions. Final result looked something like :
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+![alt text][image4]
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+#### Modifying draw_lines():
 
+In order to draw a single line on the left and right lanes, I modified the draw_lines() function by averaging the lines that make up the lane markings and drawing this new line on top of the image. First I filtered out the line segments that were not the lane marking using a series of filters. For each line, the slope, intercept, and location of the line had to meet specific criteria in order to qualify as a lane marking and pass the filter. These criteria were tuned using the sample images, and were hardcoded into draw_lines() because of the fixed position of the camera ( this would need to be adjusted if the footage was from a different vehicle ). Then I took the average slope and intercept and generated a single line that is overlayed on the image.
+
+
+
+### 2. Identify potential shortcomings with your current pipeline
+
+
+One potential shortcoming would be if the vehicle was driving at night as it was not tuned to such low contrast between lane marking and road surface. Improved tuning of the algorithm would be required. In the case of snow, this pipeline would stand no chance.
+
+Another shortcoming is that the inside lane marking appears choppy because when the pipeline cannot find a lane, as no line is drawn. This sometimes occurs on the hatched lane markings on the inside of the highway. An improvement here would be to spend more time tuning the parameters and to add smoothing to the line segments between consequtive frames.
+
+
+### 3. Suggest possible improvements to your pipeline
+
+A possible improvement would be to increase the number of lines or change the model used to extrapolate the lane marking. For instance, a solid line does not track the lane on a curve that well, whereas a quadratic would be more effective.
+
+Another improvement would be to add the ability to detect two solid double lines which are found on a divided highway here in Canada.
+
+
+In conclusion, I am satisfied with the performance of my algorithm given how well it manages the sample images and videos.  Moving forward, certainly more effort would be required to tune to parameters in the pipeline and the draw_lines() function to be more robust.
